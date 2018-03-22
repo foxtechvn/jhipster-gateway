@@ -20,7 +20,7 @@
     "messageBroker": false,
     "serviceDiscoveryType": "consul",
     "buildTool": "maven",
-    "enableSocialSignIn": false,
+    "enableSocialSignIn": true,
     "enableSwaggerCodegen": true,
     "jwtSecretKey": "e895d1f195daec1f409cfc421b34433d08093b36",
     "clientFramework": "angularX",
