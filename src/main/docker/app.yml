@@ -6,15 +6,14 @@ services:
             - SPRING_PROFILES_ACTIVE=prod,swagger
             - SPRING_CLOUD_CONSUL_HOST=consul
             - SPRING_CLOUD_CONSUL_PORT=8500
-            - SPRING_DATA_MONGODB_URI=mongodb://gateway-mongodb:27017
-            - SPRING_DATA_MONGODB_DATABASE=gateway
+            - SPRING_DATASOURCE_URL=jdbc:mariadb://gateway-mariadb:3306/gateway
             - JHIPSTER_SLEEP=10 # gives time for the database to boot before the application
         ports:
             - 8080:8080
-    gateway-mongodb:
+    gateway-mariadb:
         extends:
-            file: mongodb.yml
-            service: gateway-mongodb
+            file: mariadb.yml
+            service: gateway-mariadb
     consul:
         image: consul:0.9.3
         command: consul agent -dev -ui -client 0.0.0.0

@@ -17,7 +17,7 @@
             "hystrix": "Hystrix",
             "diskSpace": "Disk space",
             "mail": "Email",
-            "mongo": "MongoDB"
+            "db": "Database"
         },
         "table": {
             "service": "Service name",
