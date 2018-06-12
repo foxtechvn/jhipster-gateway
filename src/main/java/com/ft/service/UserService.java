@@ -1,6 +1,5 @@
 package com.ft.service;
 
-import com.ft.config.CacheConfiguration;
 import com.ft.domain.Authority;
 import com.ft.domain.User;
 import com.ft.repository.AuthorityRepository;
@@ -9,6 +8,7 @@ import com.ft.repository.UserRepository;
 import com.ft.security.AuthoritiesConstants;
 import com.ft.security.SecurityUtils;
 import com.ft.service.util.RandomUtil;
+import com.ft.web.rest.vm.ManagedUserVM;
 import com.ft.service.dto.UserDTO;
 
 import org.slf4j.Logger;
@@ -265,5 +265,60 @@ public class UserService {
     public List<String> getAuthorities() {
         return authorityRepository.findAll().stream().map(Authority::getName).collect(Collectors.toList());
     }
+
+	public User createUser(ManagedUserVM userDTO, String password) {
+		User user = new User();
+        user.setLogin(userDTO.getLogin());
+        user.setFirstName(userDTO.getFirstName());
+        user.setLastName(userDTO.getLastName());
+        user.setEmail(userDTO.getEmail());
+        user.setImageUrl(userDTO.getImageUrl());
+        if (userDTO.getLangKey() == null) {
+            user.setLangKey(Constants.DEFAULT_LANGUAGE); // default language
+        } else {
+            user.setLangKey(userDTO.getLangKey());
+        }
+        if (userDTO.getAuthorities() != null) {
+            Set<Authority> authorities = userDTO.getAuthorities().stream()
+                .map(authorityRepository::findOne)
+                .collect(Collectors.toSet());
+            user.setAuthorities(authorities);
+        }
+        String encryptedPassword = passwordEncoder.encode(password);
+        user.setPassword(encryptedPassword);
+        user.setResetKey(RandomUtil.generateResetKey());
+        user.setResetDate(Instant.now());
+        user.setActivated(true);
+        userRepository.save(user);
+        cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE).evict(user.getLogin());
+        cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE).evict(user.getEmail());
+        log.debug("Created Information for User: {}", user);
+        return user;
+	}
+
+	public Optional<UserDTO> updateUser(UserDTO userDTO, String password) {
+		return Optional.of(userRepository
+	            .findOne(userDTO.getId()))
+	            .map(user -> {
+	                user.setLogin(userDTO.getLogin());
+	                user.setFirstName(userDTO.getFirstName());
+	                user.setLastName(userDTO.getLastName());
+	                user.setEmail(userDTO.getEmail());
+	                user.setImageUrl(userDTO.getImageUrl());
+	                user.setActivated(userDTO.isActivated());
+	                user.setLangKey(userDTO.getLangKey());
+	                user.setPassword(passwordEncoder.encode(password));
+	                Set<Authority> managedAuthorities = user.getAuthorities();
+	                managedAuthorities.clear();
+	                userDTO.getAuthorities().stream()
+	                    .map(authorityRepository::findOne)
+	                    .forEach(managedAuthorities::add);
+	                userRepository.save(user);
+	                cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE).evict(user.getLogin());
+	                cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE).evict(user.getEmail());
+	                log.debug("Changed Information for User: {}", user);
+	                return user;
+	            })
+	            .map(UserDTO::new);	}
 
 }
